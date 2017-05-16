@@ -106,10 +106,10 @@ class ChromeTab(object):
         def _chrome_api(**kwargs):  # NOTE *args not allowed
             # construct calling dict
             domain, fn = name.split('_', 1)
-            domain = domain.captialize() if domain != 'dom' else 'DOM'
+            domain = pascal_case(domain) if domain != 'dom' else 'DOM'
             fn = camel_case(fn)
             params = {camel_case(k): v for k, v in kwargs.items()}
-            message = {'id': None, 'method': '{0}.{1}'.format(domain, fn), 'params': params}
+            message = {'id': 1, 'method': '{0}.{1}'.format(domain, fn), 'params': params}
 
             # send the request
             ws = websocket.create_connection(self.websocket_url)
@@ -123,11 +123,11 @@ class ChromeTab(object):
         """
         Evaluate JavaScript on the page
         """
-        return self.runtime_evalueate(expression=js_expr)
+        return self.runtime_evaluate(expression=js_expr)
 
     def get_html(self):
         result = self.run_js('document.documentElement.outerHTML')
-        value = result['result']['result']['value']
+        value = result['result']['value']
         return value.encode('utf-8')
 
     def __str__(self):
@@ -138,7 +138,7 @@ class ChromeTab(object):
         return 'ChromeTab("%s", "%s", "%s")' % (self.title, self.url, self.websocket_url)
 
 
-class Chromo(object):
+class Chrome(object):
 
     def __init__(self, host='localhost', port=9222):
         self.host = host
