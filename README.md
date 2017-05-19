@@ -1,16 +1,16 @@
-# Chromote
+# Chrome Remote
 
-Simple wrapper to drive Google Chrome from Python using the [Remote Debugging Protocol 1.2 API](https://chromedevtools.github.io/devtools-protocol/1-2)
+Simple wrapper to drive full Google Chrome from Python using the [Remote Debugging Protocol 1.2 API](https://chromedevtools.github.io/devtools-protocol/1-2)
 
 ## Installation
 
-    $ pip install chromote
+    $ pip install chrome_remote
 
 ## API
 
 ```python
->>> from chromote import Chromote
->>> chrome = Chromote()
+>>> from chrome_remote import Chrome
+>>> chrome = Chrome()
 >>> chrome
 Chromote(host="localhost", port=9222)
 >>> print chrome

@@ -3,19 +3,18 @@
 """
 Chrome Remote
 
-Python wrapper for Google Chrome Remote Debugging Protocol 1.2
+Python wrapper for Google Chrome Remote Debugging Protocol
 
-https://chromedevtools.github.io/devtools-protocol/1-2
+https://chromedevtools.github.io/devtools-protocol/
 """
 
 
 import re
 import json
-from base64 import b64decode
-
 import requests
 import websocket
 from requests.exceptions import ConnectionError
+import subprocess
 
 
 __version__ = "1.0.0"
@@ -101,14 +100,14 @@ class ChromeTab(object):
 
         e.g.
         >>> tab = ChromeTab(...)
-        >>> tab.page_navigate(url='http://google.com')  # calls Page.navigate method in chrome remote api
+        >>> tab.page__navigate(url='http://google.com')  # calls Page.navigate method in chrome remote api
         """
         def _chrome_api(**kwargs):  # NOTE *args not allowed
             # construct calling dict
-            domain, fn = name.split('_', 1)
-            domain = pascal_case(domain) if domain != 'dom' else 'DOM'
+            domain, fn = name.split('__', 1)
+            domain = pascal_case(domain).replace('Dom', 'DOM')
             fn = camel_case(fn)
-            params = {camel_case(k): v for k, v in kwargs.items()}
+            params = {camel_case(k).replace('Http', 'HTTP'): v for k, v in kwargs.items()}
             message = {'id': 1, 'method': '{0}.{1}'.format(domain, fn), 'params': params}
 
             # send the request
@@ -116,26 +115,39 @@ class ChromeTab(object):
             ws.send(json.dumps(message))
             res = json.loads(ws.recv())
             ws.close()
-            return res
+            return res.get('result')
         return _chrome_api
 
     def run_js(self, js_expr):
-        """
-        Evaluate JavaScript on the page
-        """
-        return self.runtime_evaluate(expression=js_expr)
+        return self.runtime__evaluate(expression=js_expr)
 
     def get_html(self):
         result = self.run_js('document.documentElement.outerHTML')
-        value = result['result']['value']
+        value = result['value']
         return value.encode('utf-8')
+
+    def reload(self):
+        return self.page__reload()
+
+    def goto(self, url):
+        return self.page__navigate(url=url)
+
+    def set_user_agent(self, user_agent):
+        return self.network__set_user_agent_override(user_agent=user_agent)
+
+    def add_headers(self, headers):
+        return self.network__set_extra_http_headers(headers=headers)
+
+    def clear_cache(self):
+        return self.network__clear_browser_cache()
+
+    def clear_cookies(self):
+        return self.network__clear_browser_cookies()
 
     def __str__(self):
         return '[%s - %s]' % (self.title, self.url)
 
-    def __repr__(self):
-        # TODO fixme
-        return 'ChromeTab("%s", "%s", "%s")' % (self.title, self.url, self.websocket_url)
+    __repr__ = __str__
 
 
 class Chrome(object):
@@ -177,6 +189,17 @@ class Chrome(object):
         Activate the given tab
         """
         self._access_api('{api}/json/activate/{tab_id}'.format(api=self.api, tab_id=tab.id))
+
+    def start_chrome(self):
+        """
+        Start the chrome browser
+        """
+        self.chrome_process = subprocess.Popen(['google-chrome', \
+                '--headless', \
+                '--disable-gpu', \
+                '--remote-debugging-port=9222', \
+                '--js-flags="--max_old_space_size=512"', \
+        ], shell=True)
 
     def __len__(self):
         return len(self.tabs)
