@@ -9,6 +9,8 @@ https://chromedevtools.github.io/devtools-protocol/
 """
 
 
+import os
+import signal
 import re
 import json
 import requests
@@ -123,7 +125,7 @@ class ChromeTab(object):
 
     def get_html(self):
         result = self.run_js('document.documentElement.outerHTML')
-        value = result['value']
+        value = result['result']['value']
         return value.encode('utf-8')
 
     def reload(self):
@@ -145,7 +147,7 @@ class ChromeTab(object):
         return self.network__clear_browser_cookies()
 
     def __str__(self):
-        return '[%s - %s]' % (self.title, self.url)
+        return '<%s - %s>' % (self.title, self.url)
 
     __repr__ = __str__
 
@@ -194,12 +196,15 @@ class Chrome(object):
         """
         Start the chrome browser
         """
-        self.chrome_process = subprocess.Popen(['google-chrome', \
-                '--headless', \
-                '--disable-gpu', \
-                '--remote-debugging-port=9222', \
-                '--js-flags="--max_old_space_size=512"', \
-        ], shell=True)
+        self._chrome_process = subprocess.Popen('google-chrome'+' --headless'+' --disable-gpu' +\
+                ' --remote-debugging-port={}'.format(self.port) +\
+                ' --js-flags="--max_old_space_size=512"', shell=True, preexec_fn=os.setsid)
+
+    def close_chrome(self):
+        """
+        Close the chrome browser
+        """
+        os.killpg(os.getpgid(self._chrome_process.pid), signal.SIGTERM)
 
     def __len__(self):
         return len(self.tabs)
