@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 """
 Chrome Remote
 
@@ -60,7 +59,8 @@ def pascal_case(s):
     >>> pascal_case('foo bar')
     'FooBar'
     """
-    s = re.sub(r'[A-Z]', r'-\g<0>', s, flags=re.UNICODE)  # turing uppercase to seperator with lowercase
+    # turn uppercase to seperator with lowercase
+    s = re.sub(r'[A-Z]', r'-\g<0>', s, flags=re.UNICODE)
     s = s.replace('_', '-')
     words = compact(re.split(r'\W+', s, flags=re.UNICODE))
     return ''.join([word.lower().capitalize() for word in words])
@@ -102,7 +102,8 @@ class ChromeTab(object):
 
         e.g.
         >>> tab = ChromeTab(...)
-        >>> tab.page__navigate(url='http://google.com')  # calls Page.navigate method in chrome remote api
+        >>> # calls Page.navigate method in chrome remote api
+        >>> tab.page__navigate(url='http://google.com')
         """
         def _chrome_api(**kwargs):  # NOTE *args not allowed
             # construct calling dict
@@ -164,7 +165,8 @@ class Chrome(object):
             r = requests.get(url)
             return r.json()
         except ConnectionError:
-            raise ChromeConnectionError("Connect error! is Chrome running with --remote-debugging-port=%d?" % self.port)
+            raise ChromeConnectionError("Connect error! is Chrome running with "
+                                        "--remote-debugging-port={}?".format(self.port))
 
     def get_tabs(self):
         """
@@ -196,9 +198,14 @@ class Chrome(object):
         """
         Start the chrome browser
         """
-        self._chrome_process = subprocess.Popen('google-chrome'+' --headless'+' --disable-gpu' +\
-                ' --remote-debugging-port={}'.format(self.port) +\
-                ' --js-flags="--max_old_space_size=512"', shell=True, preexec_fn=os.setsid)
+        self._chrome_process = subprocess.Popen(
+            ['google-chrome',
+            '--headless',
+            '--disable-gpu',
+            '--remote-debugging-port={}'.format(self.port),
+            '--js-flags="--max_old_space_size=512"'],
+            shell=True, preexec_fn=os.setsid
+        )
 
     def close_chrome(self):
         """
@@ -214,4 +221,3 @@ class Chrome(object):
 
     def __repr__(self):
         return 'Chromote(host="%s", port=%s)' % (self.host, self.port)
-
