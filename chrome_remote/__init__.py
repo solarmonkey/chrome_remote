@@ -162,7 +162,10 @@ class Chrome(object):
     def _access_api(self, url):
         try:
             r = requests.get(url)
-            return r.json()
+            try:
+                return r.json()
+            except json.JSONDecodeError:
+                return r.content
         except ConnectionError:
             raise ChromeConnectionError("Connect error! is Chrome running with --remote-debugging-port=%d?" % self.port)
 
